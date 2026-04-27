@@ -8,12 +8,12 @@ datasource db {
 }
 
 model User {
-  id           Int        @id @default(autoincrement())
-  email        String     @unique
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
   password     String
   name         String
-  role         String     @default("user")
-  createdAt    DateTime   @default(now())
+  role         String   @default("user")
+  createdAt    DateTime @default(now())
   refreshToken String?
   orders       Order[]
   cart         Cart?
@@ -29,6 +29,7 @@ model Product {
   category    String
   createdAt   DateTime    @default(now())
   orderItems  OrderItem[]
+  CartItem    CartItem[]
 }
 
 model Cart {
@@ -50,13 +51,13 @@ model CartItem {
 }
 
 model Order {
-  id            Int         @id @default(autoincrement())
-  userId        Int
-  user          User        @relation(fields: [userId], references: [id])
-  total         Float
-  status        String      @default("pending")
-  createdAt     DateTime    @default(now())
-  items         OrderItem[]
+  id        Int         @id @default(autoincrement())
+  userId    Int
+  user      User        @relation(fields: [userId], references: [id])
+  total     Float
+  status    String      @default("pending")
+  createdAt DateTime    @default(now())
+  items     OrderItem[]
 }
 
 model OrderItem {
