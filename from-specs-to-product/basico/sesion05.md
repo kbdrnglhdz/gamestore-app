@@ -37,8 +37,8 @@
 **Verificar el bug manualmente (opcional):**
 ```bash
 # Si el backend está corriendo
-curl "http://localhost:3000/api/products?page=1&limit=10"
-curl "http://localhost:3000/api/products?page=2&limit=10"
+curl "http://localhost:3001/api/products?page=1&limit=10"
+curl "http://localhost:3001/api/products?page=2&limit=10"
 # Comparar resultados
 ```
 
@@ -82,7 +82,7 @@ En el chat del asistente IA:
 ```
 
 **La IA debería:**
-1. Buscar el controlador de productos (`backend/src/controllers/productController.ts`).
+1. Buscar el controlador de productos (`backend/src/routes/products.ts`).
 2. Identificar la lógica de paginación (posiblemente `skip` y `take` mal calculados).
 3. Señalar el error: `skip = (page - 1) * limit` pero quizás `page` no se está parseando como número.
 
@@ -101,7 +101,7 @@ AI: 1. El controlador usa `req.query.page` sin convertirlo a número, por lo que
 ### 3.3 Verificar el código manualmente (confirmación)
 
 ```bash
-cat backend/src/controllers/productController.ts | grep -A 10 "getProducts"
+cat backend/src/routes/products.ts
 ```
 
 Buscar la línea problemática.

@@ -24,30 +24,27 @@ router.get('/', async (req, res) => {
       where.category = category as string;
     }
 
-    // BUG: Price filter sorts alphabetically ("10" < "2")
-    // FIXME: Price should be numeric, not string comparison
     if (minPrice) {
-      where.price = { ...where.price, gte: minPrice as string };
+      where.price = { ...where.price, gte: parseFloat(minPrice as string) };
     }
     if (maxPrice) {
-      where.price = { ...where.price, lte: maxPrice as string };
+      where.price = { ...where.price, lte: parseFloat(maxPrice as string) };
     }
 
-    // BUG: Sort doesn't work properly for price
-    let orderBy: any = { createdAt: 'desc' };
-    if (sort === 'price_asc') {
-      orderBy = { price: 'asc' }; // FIXME: Sorts alphabetically
-    } else if (sort === 'price_desc') {
-      orderBy = { price: 'desc' };
-    }
+      let orderBy: any = [{ createdAt: 'desc' }, { id: 'asc' }];
+     if (sort === 'price_asc') {
+       orderBy = [{ price: 'asc' }];
+     } else if (sort === 'price_desc') {
+       orderBy = [{ price: 'desc' }];
+     }
 
-    // BUG: N+1 query problem - fetches each product separately
-    const products = await prisma.product.findMany({
-      where,
-      skip: skip, // BUG: This should work but page 2 doesn't
-      take: limitNum,
-      orderBy
-    });
+     // BUG: N+1 query problem - fetches each product separately
+     const products = await prisma.product.findMany({
+       where,
+       skip: skip,
+       take: limitNum,
+       orderBy
+     });
 
     const total = await prisma.product.count({ where });
 
@@ -83,12 +80,16 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { name, description, price, image, stock, category } = req.body;
 
+    if (stock < 0) {
+      return res.status(400).json({ error: 'Stock cannot be negative' });
+    }
+
     const product = await prisma.product.create({
       data: {
         name,
         description,
-        price: String(price), // BUG: Price stored as string
-        image, // BUG: Absolute path pointing to localhost
+        price: parseFloat(price),
+        image,
         stock,
         category
       }
@@ -105,12 +106,16 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { name, description, price, image, stock, category } = req.body;
 
+    if (stock < 0) {
+      return res.status(400).json({ error: 'Stock cannot be negative' });
+    }
+
     const product = await prisma.product.update({
       where: { id: parseInt(id) },
       data: {
         name,
         description,
-        price: String(price),
+        price: parseFloat(price),
         image,
         stock,
         category

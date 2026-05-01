@@ -23,44 +23,61 @@ router.post('/checkout', authenticate, async (req: AuthRequest, res: Response) =
       return res.status(400).json({ error: 'Cart is empty' });
     }
 
-    // BUG: No validation that stock is sufficient
-    // TODO: Validate stock before creating order
-
-    let total = 0;
-    const orderItems = [];
-
+    const insufficientStock: string[] = [];
     for (const item of cart.items) {
-      const price = parseFloat(item.product.price);
-      total += price * item.quantity;
-      
-      orderItems.push({
-        productId: item.productId,
-        quantity: item.quantity,
-        price
+      if (item.quantity > item.product.stock) {
+        insufficientStock.push(`${item.product.name}. Available: ${item.product.stock}`);
+      }
+    }
+
+    if (insufficientStock.length > 0) {
+      return res.status(400).json({
+        error: `Insufficient stock for: ${insufficientStock.join(', ')}`
       });
     }
 
-    const order = await prisma.order.create({
-      data: {
-        userId,
-        total,
-        status: 'pending',
-        items: {
-          create: orderItems
-        }
-      },
-      include: {
-        items: {
-          include: { product: true }
-        }
+    const order = await prisma.$transaction(async (tx) => {
+      let total = 0;
+      const orderItems = [];
+
+      for (const item of cart.items) {
+        const price = parseFloat(item.product.price);
+        total += price * item.quantity;
+
+        orderItems.push({
+          productId: item.productId,
+          quantity: item.quantity,
+          price
+        });
+
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: item.product.stock - item.quantity }
+        });
       }
+
+      const order = await tx.order.create({
+        data: {
+          userId,
+          total,
+          status: 'pending',
+          items: {
+            create: orderItems
+          }
+        },
+        include: {
+          items: {
+            include: { product: true }
+          }
+        }
+      });
+
+      await tx.cartItem.deleteMany({
+        where: { cartId: cart.id }
+      });
+
+      return order;
     });
-
-    // BUG: Cart not cleared after checkout
-    // TODO: Clear cart after successful order
-
-    // BUG: No confirmation step - order created immediately
-    // TODO: Add confirmation step
 
     res.status(201).json(order);
   } catch (error: any) {

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = 'hardcoded-secret-key-12345';
+const SESSION_TIMEOUT = parseInt(process.env.SESSION_TIMEOUT || '60', 10);
 
 export interface AuthRequest extends Request {
   userId?: number;
@@ -26,7 +27,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
 };
 
 export const generateToken = (userId: number, role: string) => {
-  return jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: '15m' });
+  return jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: `${SESSION_TIMEOUT}m` });
 };
 
 export const generateRefreshToken = (userId: number) => {

@@ -164,7 +164,7 @@ El instructor puede inyectar un error intencional para mostrar cómo se corrige.
 
 **Corrección:** Editar el archivo correspondiente (ej. `frontend/src/services/api.ts`) y luego ejecutar `verify` nuevamente.
 
-### 4.3 Verificar en formato JSON (opcional)
+### 4.3 Verificar en formato JSON (opcional)   //ELMINAR
 
 ```bash
 openspec verify --change fix-session-timeout --json | jq '.summary'

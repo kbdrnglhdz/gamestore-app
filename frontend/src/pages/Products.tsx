@@ -8,7 +8,7 @@ interface Product {
   id: number;
   name: string;
   description: string;
-  price: string;
+  price: number;
   image: string;
   stock: number;
   category: string;
@@ -96,7 +96,7 @@ export const Products = () => {
                 <div className="p-4">
                   <h3 className="font-bold text-lg">{product.name}</h3>
                   <p className="text-gray-600 text-sm">{product.description}</p>
-                  <p className="text-blue-600 font-bold mt-2">${product.price}</p>
+                  <p className="text-blue-600 font-bold mt-2">${Number(product.price).toFixed(2)}</p>
                   <p className="text-sm text-gray-500">Stock: {product.stock}</p>
                   <button
                     onClick={() => handleAddToCart(product.id)}
@@ -109,17 +109,36 @@ export const Products = () => {
             ))}
           </div>
 
-          <div className="flex justify-center gap-2 mt-6">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-              <button
-                key={p}
-                onClick={() => setPage(p)}
-                className={`px-4 py-2 rounded ${page === p ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
+           <div className="flex justify-center gap-2 mt-6 items-center">
+             <button
+               onClick={() => setPage(page - 1)}
+               disabled={page <= 1}
+               className="px-4 py-2 rounded bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+             >
+               Previous
+             </button>
+             {(() => {
+               const maxVisiblePages = 5;
+               const startPage = Math.max(1, page - Math.floor(maxVisiblePages / 2));
+               const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+               return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i).map(p => (
+                 <button
+                   key={p}
+                   onClick={() => setPage(p)}
+                   className={`px-4 py-2 rounded ${page === p ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+                 >
+                   {p}
+                 </button>
+               ));
+             })()}
+             <button
+               onClick={() => setPage(page + 1)}
+               disabled={page >= totalPages}
+               className="px-4 py-2 rounded bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+             >
+               Next
+             </button>
+           </div>
         </>
       )}
     </div>

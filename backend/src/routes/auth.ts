@@ -11,7 +11,7 @@ router.post('/register', async (req, res) => {
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({ error: 'Email already exists' });
+      return res.status(400).json({ error: 'This email is already registered. Try logging in instead.' });
     }
 
     // BUG: Password stored in plain text
@@ -48,7 +48,7 @@ router.post('/login', async (req, res) => {
     });
 
     if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: 'Invalid email or password' });
     }
 
     const token = generateToken(user.id, user.role);
@@ -70,7 +70,7 @@ router.post('/refresh', async (req, res) => {
     const { refreshToken } = req.body;
 
     if (!refreshToken) {
-      return res.status(400).json({ error: 'Refresh token required' });
+      return res.status(400).json({ error: 'Refresh token is required. Please log in again.' });
     }
 
     const decoded = verifyRefreshToken(refreshToken);
@@ -80,14 +80,18 @@ router.post('/refresh', async (req, res) => {
     });
 
     if (!user || user.refreshToken !== refreshToken) {
-      return res.status(401).json({ error: 'Invalid refresh token' });
+      return res.status(401).json({ error: 'Your session has expired. Please log in again.' });
     }
 
-    // BUG: Refresh token is not renewed, returning the same token
     const token = generateToken(user.id, user.role);
-    // FIXME: Should generate new refresh token and store it
+    const newRefreshToken = generateRefreshToken(user.id);
     
-    res.json({ token, refreshToken }); // BUG: Returning same refresh token instead of new one
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken: newRefreshToken }
+    });
+    
+    res.json({ token, refreshToken: newRefreshToken });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -114,7 +118,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
     });
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: 'User account not found. Please contact support.' });
     }
 
     res.json(user);

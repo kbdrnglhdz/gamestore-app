@@ -24,7 +24,21 @@ export const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-md w-96">
         <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
-        {error && <div className="bg-red-100 text-red-700 p-2 rounded mb-4">{error}</div>}
+        {error && (
+          <div className="bg-red-50 border border-red-300 text-red-800 px-4 py-3 rounded-lg mb-4 flex items-start gap-2" role="alert">
+            <svg className="w-5 h-5 mt-0.5 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <span className="text-sm font-medium">{error}</span>
+              {error?.toLowerCase().includes('password') && (
+                <p className="text-sm mt-1">
+                  <a href="#" className="text-blue-600 hover:underline">Forgot password?</a>
+                </p>
+              )}
+            </div>
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">Email</label>

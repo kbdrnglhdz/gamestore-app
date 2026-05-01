@@ -3,11 +3,41 @@ const API_URL = 'http://localhost:3001/api';
 let authToken = localStorage.getItem('token');
 let refreshToken = localStorage.getItem('refreshToken');
 
+// Aligns with backend SESSION_TIMEOUT=60 (60 minutes = 3600000 ms)
+const SESSION_TIMEOUT_MS = 60 * 60 * 1000;
+const SESSION_WARNING_MS = 5 * 60 * 1000;
+
+const updateActivity = () => {
+  localStorage.setItem('sessionLastActivity', Date.now().toString());
+};
+
+const getSessionTimeRemaining = () => {
+  const lastActivity = localStorage.getItem('sessionLastActivity');
+  if (!lastActivity) return 0;
+  const elapsed = Date.now() - parseInt(lastActivity, 10);
+  return Math.max(0, SESSION_TIMEOUT_MS - elapsed);
+};
+
+let warningShown = false;
+const checkSessionWarning = () => {
+  const remaining = getSessionTimeRemaining();
+  if (remaining <= SESSION_WARNING_MS && remaining > 0 && !warningShown) {
+    warningShown = true;
+    const remainingMinutes = Math.ceil(remaining / 60000);
+    alert(`Your session will expire in ${remainingMinutes} minutes. Click OK to stay logged in.`);
+    updateActivity();
+    warningShown = false;
+  }
+};
+
+const sessionCheckInterval = setInterval(checkSessionWarning, 30000);
+
 export const setTokens = (token: string, refresh: string) => {
   authToken = token;
   refreshToken = refresh;
   localStorage.setItem('token', token);
   localStorage.setItem('refreshToken', refresh);
+  updateActivity();
 };
 
 export const clearTokens = () => {
@@ -25,6 +55,7 @@ const handleUnauthorized = () => {
 };
 
 const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
+  updateActivity();
   const headers: any = {
     'Content-Type': 'application/json',
     ...options.headers
