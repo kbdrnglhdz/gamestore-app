@@ -331,9 +331,28 @@ cat > .husky/pre-commit << 'EOF'
 echo "🔍 Validating OpenSpec changes..."
 
 # Validar todos los cambios afectados por el commit
-CHANGED_CHANGES=$(git diff --cached --name-only | grep "openspec/changes/" | cut -d'/' -f3 | sort -u)
+# Solo validar cambios activos (no en archive/)
+# Extraer nombres de cambios: openspec/changes/NOMBRE_CAMBIO/...
+CHANGED_CHANGES=""
+for path in $(git diff --cached --name-only | grep "^openspec/changes/"); do
+  # Extraer el nombre del cambio (segundo nivel después de openspec/changes/)
+  change=$(echo "$path" | cut -d'/' -f3)
+  
+  # Ignorar si es "archive" o directorios especiales
+  if [ "$change" = "archive" ] || [ "$change" = "_" ]; then
+    continue
+  fi
+  
+  # Verificar que el directorio del cambio existe y no está en archive
+  if [ -d "openspec/changes/$change" ]; then
+    CHANGED_CHANGES="$CHANGED_CHANGES $change"
+  fi
+done
 
-if [ -n "$CHANGED_CHANGES" ]; then
+# Eliminar duplicados
+CHANGED_CHANGES=$(echo "$CHANGED_CHANGES" | tr ' ' '\n' | sort -u | tr '\n' ' ')
+
+if [ -n "$(echo "$CHANGED_CHANGES" | tr -d ' ')" ]; then
   for change in $CHANGED_CHANGES; do
     echo "Validating $change..."
     openspec validate "$change" --strict
@@ -349,6 +368,7 @@ fi
 openspec validate --specs
 
 echo "✅ OpenSpec validation passed!"
+
 EOF
 
 chmod +x .husky/pre-commit
